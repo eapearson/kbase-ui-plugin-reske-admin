@@ -1,0 +1,40 @@
+## RESKE Admin Tool KBase UI Plugin
+---
+package:
+  author: Erik Pearson
+  name: reske-admin
+  description: An admin tool prototype for RESKE
+source:
+  modules:
+  styles:
+install:
+  widgets:
+    -
+      id: kb_reskeAdmin_main
+      module: panel
+      type: factory
+  ko-components:
+    -
+      name: reske-admin-apps-status
+      module: components/appsStatus
+      css: true
+    -
+      name: reske-admin-connectors-status
+      module: components/connectorsStatus
+      css: true
+    -
+      name: reske-admin-control-bar
+      module: components/controlBar
+      css: true
+  routes:
+    -
+      path: ['reske', 'admin']
+      widget: kb_reskeAdmin_main
+      authorization: true
+  menus:
+    -
+      name: reske-admin
+      definition:
+        path: reske/admin
+        icon: bar-chart
+        label: Reske Admin

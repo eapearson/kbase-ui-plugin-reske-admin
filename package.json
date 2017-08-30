@@ -1,0 +1,19 @@
+{
+    "name": "kbase-ui-plugin-reske-admin",
+    "version": "0.1.0",
+    "description": "A prototype",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kbase/kbase-ui-plugin-reske-admin.git"
+    },
+    "author": "",
+    "license": "SEE LICENSE IN LICENSE",
+    "bugs": {
+        "url": "https://github.com/kbase/kbase-ui-plugin-reske-admin/issues"
+    },
+    "homepage": "https://github.com/kbase/kbase-ui-plugin-reske-admin#readme"
+}
