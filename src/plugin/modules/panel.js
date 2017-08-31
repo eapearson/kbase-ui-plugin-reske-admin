@@ -37,7 +37,17 @@ define([
         function Poller() {
             var running = false;
             var task;
-            var timer;
+            var currentPoll = {
+                id: null,
+                timer: null,
+                cancelled: false
+            };
+            var lastId = 0;
+
+            function nextId() {
+                lastId += 1;
+                return lastId;
+            }
 
             function start(theTask) {
                 task = theTask;
@@ -57,34 +67,70 @@ define([
                 running = false;
             }
 
+            function timestamp() {
+                return new Date().toLocaleString();
+            }
+
             function runTask() {
+                var start = new Date().getTime();
                 return task.task()
                     .catch(function(err) {
-                        console.error('Error while polling', err);
+                        console.error(timestamp() + ': Error while running task', err);
+                    })
+                    .finally(function() {
+                        console.log(timestamp() + ': ran task in ' + (new Date().getTime() - start) + 'ms');
                     });
             }
 
             function poll() {
+                // If we aren't polling at all, ignore.
                 if (!running) {
                     return;
                 }
-                timer = window.setTimeout(function() {
+
+                // If called when a poll is already waiting, just ignore.
+                // The proper way is to cancel the original one.
+                if (currentPoll.timer) {
+                    return;
+                }
+
+                // This is the global current poll. It can be touched during cancellation
+                // to signal to the timer which has captured it to halt.
+                currentPoll = {
+                    timer: null,
+                    id: nextId(),
+                    cancelled: false
+                };
+
+                currentPoll.timer = window.setTimeout(function() {
+                    // Store a private reference so new pollers don't interfere if they are 
+                    // created while we are still running.
+                    var thisPoll = currentPoll;
+                    if (thisPoll.cancelled) {
+                        // don't do it!                        
+                        console.warn('poll cancelled! ' + thisPoll.id);
+                    }
                     runTask()
                         .finally(function() {
-                            timer = null;
+                            thisPoll.timer = null;
                             poll();
                         });
                 }, task.interval);
+            }
+
+            function cancelCurrentPoll() {
+                if (currentPoll.timer) {
+                    window.clearTimeout(currentPoll.timer);
+                    currentPoll.timer = null;
+                    currentPoll.cancelled = true;
+                }
             }
 
             function force() {
                 if (!running) {
                     running = true;
                 } else {
-                    if (timer) {
-                        window.clearTimeout(timer);
-                        timer = null;
-                    }
+                    cancelCurrentPoll();
                 }
                 runTask()
                     .then(function() {
@@ -96,10 +142,7 @@ define([
                 if (!running) {
                     running = true;
                 } else {
-                    if (timer) {
-                        window.clearTimeout(timer);
-                        timer = null;
-                    }
+                    cancelCurrentPoll();
                 }
                 poll();
             }
@@ -444,7 +487,7 @@ define([
 
 
                             var elapsed = new Date().getTime() - start;
-                            console.log('poller took: ' + elapsed + 'ms');
+                            // console.log('poller took: ' + elapsed + 'ms');
                         })
                         .finally(function() {
                             message('');
