@@ -43,6 +43,7 @@ define([
                 tr([
                     th('User'),
                     th('Name'),
+                    th('Obj Ref'),
                     th('Status'),
                     th(div({
                         style: {
@@ -62,7 +63,7 @@ define([
                             textAlign: 'left'
                         }
                     }, 'New Relations')),
-                    th('Last run')
+                    th('Ran at')
                 ])
             ]),
             tbody({
@@ -82,22 +83,27 @@ define([
                 }),
                 td({
                     dataBind: {
-                        text: 'status'
+                        text: 'objectRef'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'updatedNodes'
+                        html: 'statusIcon'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'newNodes'
+                        html: 'updatedNodes'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'newRelations'
+                        html: 'newNodes'
+                    }
+                }),
+                td({
+                    dataBind: {
+                        html: 'newRelations'
                     }
                 }),
                 td({

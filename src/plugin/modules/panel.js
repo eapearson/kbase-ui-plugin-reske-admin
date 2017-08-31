@@ -14,19 +14,23 @@ define([
     DynamicServiceClient
 ) {
     var t = html.tag,
-        div = t('div');
+        div = t('div'),
+        span = t('span');
 
     function factory(config) {
         var runtime = config.runtime,
             hostNode, container,
             vm;
 
+        var normalPollingInterval = 10000;
+        var runningPollingInterval = 1000;
+
         function dateFormat(time) {
             if (time === 0) {
                 return 'never';
             }
             var date = new Date(time);
-            return [date.getMonth(), date.getDate(), date.getFullYear()].join('/');
+            return [date.getMonth() + 1, date.getDate(), date.getFullYear()].join('/');
         }
 
         // Nah, just a single-task poller.
@@ -88,10 +92,32 @@ define([
                     });
             }
 
+            function restart() {
+                if (!running) {
+                    running = true;
+                } else {
+                    if (timer) {
+                        window.clearTimeout(timer);
+                        timer = null;
+                    }
+                }
+                poll();
+            }
+
+            function update(config) {
+                if (config.interval) {
+                    if (config.interval !== task.interval) {
+                        task.interval = config.interval;
+                        restart();
+                    }
+                }
+            }
+
             return {
                 start: start,
                 stop: stop,
-                force: force
+                force: force,
+                update: update
             };
         }
 
@@ -105,6 +131,20 @@ define([
             var resetStatus = ko.observable('idle');
 
             message('Welcome!');
+
+            var jobsRunning = ko.observable(false);
+
+            jobsRunning.subscribe(function(newValue) {
+                if (newValue) {
+                    poller.update({
+                        interval: runningPollingInterval
+                    });
+                } else {
+                    poller.update({
+                        interval: normalPollingInterval
+                    });
+                }
+            });
 
             var client = new DynamicServiceClient({
                 url: runtime.config('services.service_wizard.url'),
@@ -158,45 +198,217 @@ define([
                     });
             }
 
+            function icon(type, color) {
+                return span({
+                    class: 'fa fa-' + type,
+                    style: {
+                        color: color || 'black'
+                    }
+                });
+            }
+
+            function buildStateIcon(state) {
+                switch (state) {
+                    case 'none':
+                        return icon('ban', 'silver');
+
+                    case 'queued':
+                        return span({
+                            class: 'fa fa-spinner fa-spin fa-fw',
+                            style: {
+                                color: 'orange'
+                            }
+                        });
+                    case 'started':
+                        return span({
+                            class: 'fa fa-spinner fa-spin fa-fw',
+                            style: {
+                                color: 'blue'
+                            }
+                        });
+                    case 'finished':
+                        return icon('check', 'green');
+                }
+            }
+
+            function buildLastRunAt(appStatus) {
+                switch (appStatus.state) {
+                    case 'none':
+                        return span({
+                            style: {
+                                color: 'silver'
+                            }
+                        }, 'never');
+                    case 'queued':
+                        return span({
+                            style: {
+                                color: 'silver'
+                            }
+                        }, dateFormat(appStatus.queued_epoch_ms));
+                    case 'started':
+                        return span({
+                            style: {
+                                color: 'gray'
+                            }
+                        }, dateFormat(appStatus.started_epoch_ms));
+                    case 'finished':
+                        return span({
+                            style: {
+                                color: 'black'
+                            }
+                        }, dateFormat(appStatus.finished_epoch_ms));
+                }
+            }
+
+            // {
+            //     app: "A1",
+            //     app_title: "Orthology GO profiles",
+            //     finished_epoch_ms: 1504207620568,
+            //     job_id: "12346769",
+            //     new_re_links: 23748234,
+            //     new_re_nodes: 12767346,
+            //     output: "<output>",
+            //     queued_epoch_ms: 1504207610568,
+            //     scheduled_epoch_ms: 1504964180656,
+            //     started_epoch_ms: 1504207615568,
+            //     state: "finished",
+            //     updated_re_nodes: 165246,
+            //     user: "kbadmin"
+            // }
+
             // Kick off the apps status population.
             function updateAppStatus() {
                 return getAppsStatus()
                     .then(function(newAppsStatus) {
                         appsStatus.removeAll();
                         newAppsStatus.forEach(function(appStatus) {
-                            var status = {
+
+                            // if (appStatus.state === 'queued') {
+                            //     console.log(appStatus);
+                            // }
+
+                            var stateIcon = buildStateIcon(appStatus.state);
+                            var lastRunAt = buildLastRunAt(appStatus);
+
+                            var newStatus = {
                                 app: appStatus.app,
                                 name: appStatus.app_title,
                                 status: appStatus.state,
+                                statusIcon: stateIcon,
                                 updatedNodes: numeral(appStatus.updated_re_nodes).format('0,0'),
                                 newNodes: numeral(appStatus.new_re_nodes).format('0,0'),
                                 newRelations: numeral(appStatus.new_re_links).format('0,0'),
-                                lastRunAt: dateFormat(appStatus.queued_epoch_ms),
+                                lastRunAt: lastRunAt,
                                 nextRunAt: dateFormat(appStatus.scheduled_epoch_ms)
 
                             };
-                            appsStatus.push(status);
+
+                            var hasNeverBeenRun = appStatus.queued_epoch_ms === 0 ? true : false;
+                            var isRunning = (appStatus.state === 'queued' || appStatus.state === 'started');
+                            var dataPending = span({
+                                class: 'fa fa-spinner fa-spin fa-fw'
+                            });
+
+                            dataPending = span({
+                                style: {
+                                    color: 'silver'
+                                }
+                            }, '-');
+
+                            var dataNever = span({
+                                class: 'fa fa-ban',
+                                style: {
+                                    color: 'silver'
+                                }
+                            });
+
+                            if (isRunning) {
+                                newStatus.newNodes = dataPending;
+                                newStatus.newRelations = dataPending;
+                                newStatus.updatedNodes = dataPending;
+                            } else if (hasNeverBeenRun) {
+                                newStatus.newNodes = dataNever;
+                                newStatus.newRelations = dataNever;
+                                newStatus.updatedNodes = dataNever;
+                            } else {
+                                newStatus.updatedNodes = numeral(appStatus.updated_re_nodes).format('0,0');
+                                newStatus.newNodes = numeral(appStatus.new_re_nodes).format('0,0');
+                                newStatus.newRelations = numeral(appStatus.new_re_links).format('0,0');
+                            }
+
+                            appsStatus.push(newStatus);
                         });
+
+                        return newAppsStatus;
                     });
             }
 
             var connectorsStatus = ko.observableArray();
+
+            // {
+            //     connector_app: "GenomeHomologyConnector",
+            //     connector_title: "Genome homology connector",
+            //     finished_epoch_ms: 1504150038840,
+            //     job_id: "12346712",
+            //     new_re_links: 4858,
+            //     new_re_nodes: 4858,
+            //     obj_ref: "<obj_ref>",
+            //     obj_type: "<obj_type>",
+            //     output: "<output>",
+            //     queued_epoch_ms: 1504144050840,
+            //     started_epoch_ms: 1504144099840,
+            //     state: "finished",
+            //     updated_re_nodes: 0,
+            //     user: "psnovichkov"
+            // }
 
             function updateConnectorStatus() {
                 return getConnectorsStatus()
                     .then(function(newConnectorsStatus) {
                         connectorsStatus.removeAll();
                         newConnectorsStatus.forEach(function(status) {
-                            connectorsStatus.push({
+                            var stateIcon = buildStateIcon(status.state);
+                            var newStatus = {
                                 user: status.user,
                                 name: status.connector_title,
+                                objectRef: status.obj_ref,
                                 status: status.state,
-                                lastRunAt: dateFormat(status.queued_epoch_ms),
-                                updatedNodes: numeral(status.updated_re_nodes).format('0,0'),
-                                newNodes: numeral(status.new_re_nodes).format('0,0'),
-                                newRelations: numeral(status.new_re_links).format('0,0')
+                                statusIcon: stateIcon,
+                                lastRunAt: dateFormat(status.finished_epoch_ms),
+
+                            };
+                            var hasNeverBeenRun = status.queued_epoch_ms === 0 ? true : false;
+                            var isRunning = (status.state === 'queued' || status.state === 'started');
+                            var dataPending = span({
+                                class: 'fa fa-spinner fa-spin fa-fw'
                             });
+                            dataPending = span({
+                                style: {
+                                    color: 'silver'
+                                }
+                            }, '-');
+
+                            var dataNever = span({
+                                class: 'fa fa-ban'
+                            });
+
+                            if (isRunning) {
+                                newStatus.newNodes = dataPending;
+                                newStatus.newRelations = dataPending;
+                                newStatus.updatedNodes = dataPending;
+                            } else if (hasNeverBeenRun) {
+                                newStatus.newNodes = dataNever;
+                                newStatus.newRelations = dataNever;
+                                newStatus.updatedNodes = dataNever;
+                            } else {
+                                newStatus.updatedNodes = numeral(status.updated_re_nodes).format('0,0');
+                                newStatus.newNodes = numeral(status.new_re_nodes).format('0,0');
+                                newStatus.newRelations = numeral(status.new_re_links).format('0,0');
+                            }
+
+                            connectorsStatus.push(newStatus);
                         });
+                        return newConnectorsStatus;
                     });
             }
 
@@ -204,7 +416,7 @@ define([
             var poller = Poller();
             poller.start({
                 name: 'updater',
-                interval: 10000,
+                interval: normalPollingInterval,
                 runInitial: true,
                 task: function() {
                     message('polling...');
@@ -214,7 +426,23 @@ define([
                             updateAppStatus(),
                             updateConnectorStatus()
                         ])
-                        .then(function() {
+                        .spread(function(appsStatus, connectorStatus) {
+
+                            if (
+                                appsStatus.some(function(status) {
+                                    return (['accepted', 'queued', 'started'].indexOf(status.state) >= 0);
+                                })
+                                // ||
+                                // connectorStatus.some(function(status) {
+                                //     return (['accepted', 'queued', 'started'].indexOf(status.state) >= 0);
+                                // })
+                            ) {
+                                jobsRunning(true);
+                            } else {
+                                jobsRunning(false);
+                            }
+
+
                             var elapsed = new Date().getTime() - start;
                             console.log('poller took: ' + elapsed + 'ms');
                         })
@@ -292,7 +520,7 @@ define([
                         },
                         tabs: [{
                             name: 'appstatus',
-                            title: 'App Status',
+                            title: 'KE App Status',
                             body: div({
                                 dataBind: {
                                     component: {
@@ -306,7 +534,7 @@ define([
                             })
                         }, {
                             name: 'connectionstatus',
-                            title: 'Connection Status',
+                            title: 'KE Connection Status',
                             body: div({
                                 dataBind: {
                                     component: {

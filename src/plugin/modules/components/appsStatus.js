@@ -81,27 +81,27 @@ define([
                 }),
                 td({
                     dataBind: {
-                        text: 'status'
+                        html: 'statusIcon'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'updatedNodes'
+                        html: 'updatedNodes'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'newNodes'
+                        html: 'newNodes'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'newRelations'
+                        html: 'newRelations'
                     }
                 }),
                 td({
                     dataBind: {
-                        text: 'lastRunAt'
+                        html: 'lastRunAt'
                     }
                 }),
                 td({
