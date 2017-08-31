@@ -61,7 +61,8 @@ define([
                             display: 'inline-block',
                             textAlign: 'left'
                         }
-                    }, 'New Relations'))
+                    }, 'New Relations')),
+                    th('Last run')
                 ])
             ]),
             tbody({
@@ -109,11 +110,9 @@ define([
     }
 
     function template() {
-        return BS.buildCollapsiblePanel({
-            title: 'Connectors Status',
-            classes: ['component-reske-admin-connectors-status'],
-            body: buildTable()
-        });
+        return div({
+            class: 'component-reske-admin-connectors-status'
+        }, buildTable());
     }
 
     function component() {

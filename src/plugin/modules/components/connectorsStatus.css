@@ -1,9 +1,9 @@
 .component-reske-admin-connectors-status table td:nth-child(3),
-.component-reske-admin-connectors-status table td:nth-child(4),
 .component-reske-admin-connectors-status table td:nth-child(5),
-.component-reske-admin-connectors-status table th:nth-child(3),
+.component-reske-admin-connectors-status table td:nth-child(6),
 .component-reske-admin-connectors-status table th:nth-child(4),
-.component-reske-admin-connectors-status table th:nth-child(5) {
+.component-reske-admin-connectors-status table th:nth-child(5),
+.component-reske-admin-connectors-status table th:nth-child(6) {
     text-align: right;
     padding-right: 1em;
 }

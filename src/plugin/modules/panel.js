@@ -3,12 +3,14 @@ define([
     'knockout-plus',
     'numeral',
     'kb_common/html',
+    'kb_common/bootstrapUtils',
     'kb_common/jsonRpc/dynamicServiceClient'
 ], function(
     Promise,
     ko,
     numeral,
     html,
+    BS,
     DynamicServiceClient
 ) {
     var t = html.tag,
@@ -104,12 +106,13 @@ define([
 
             message('Welcome!');
 
+            var client = new DynamicServiceClient({
+                url: runtime.config('services.service_wizard.url'),
+                module: 'KBaseKnowledgeEngine',
+                token: runtime.service('session').getAuthToken()
+            });
+
             function getAppsStatus() {
-                var client = new DynamicServiceClient({
-                    url: runtime.config('services.service_wizard.url'),
-                    module: 'KBaseKnowledgeEngine',
-                    token: runtime.service('session').getAuthToken()
-                });
                 return client.callFunc('getAppsStatus', [])
                     .spread(function(result) {
                         return result;
@@ -117,11 +120,6 @@ define([
             }
 
             function getConnectorsStatus() {
-                var client = new DynamicServiceClient({
-                    url: runtime.config('services.service_wizard.url'),
-                    module: 'KBaseKnowledgeEngine',
-                    token: runtime.service('session').getAuthToken()
-                });
                 return client.callFunc('getConnectorsStatus', [])
                     .spread(function(result) {
                         return result;
@@ -133,11 +131,6 @@ define([
                     app: data.app,
                     ref_mode: 1
                 };
-                var client = new DynamicServiceClient({
-                    url: runtime.config('services.service_wizard.url'),
-                    module: 'KBaseKnowledgeEngine',
-                    token: runtime.service('session').getAuthToken()
-                });
                 return client.callFunc('runApp', [params])
                     .spread(function(result) {
                         poller.force();
@@ -287,38 +280,45 @@ define([
                         }
                     }))
                 ]),
+
                 div({
                     class: 'row'
                 }, [
                     div({
                         class: 'col-md-12'
-                    }, div({
-                        dataBind: {
-                            component: {
-                                name: '"reske-admin-apps-status"',
-                                params: {
-                                    appsStatus: 'appsStatus',
-                                    doRunAppStatus: 'doRunAppStatus'
+                    }, BS.buildTabs({
+                        style: {
+                            paddingTop: '12px'
+                        },
+                        tabs: [{
+                            name: 'appstatus',
+                            title: 'App Status',
+                            body: div({
+                                dataBind: {
+                                    component: {
+                                        name: '"reske-admin-apps-status"',
+                                        params: {
+                                            appsStatus: 'appsStatus',
+                                            doRunAppStatus: 'doRunAppStatus'
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                    }))
-                ]),
-                div({
-                    class: 'row'
-                }, [
-                    div({
-                        class: 'col-md-12'
-                    }, div({
-                        dataBind: {
-                            component: {
-                                name: '"reske-admin-connectors-status"',
-                                params: {
-                                    connectorsStatus: 'connectorsStatus'
+                            })
+                        }, {
+                            name: 'connectionstatus',
+                            title: 'Connection Status',
+                            body: div({
+                                dataBind: {
+                                    component: {
+                                        name: '"reske-admin-connectors-status"',
+                                        params: {
+                                            connectorsStatus: 'connectorsStatus'
+                                        }
+                                    }
                                 }
-                            }
-                        }
-                    }))
+                            })
+                        }]
+                    }).content)
                 ])
             ]);
             vm = viewModel();

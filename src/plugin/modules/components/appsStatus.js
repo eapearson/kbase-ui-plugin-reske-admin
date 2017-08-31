@@ -122,11 +122,9 @@ define([
     }
 
     function template() {
-        return BS.buildCollapsiblePanel({
-            title: 'Apps Status',
-            classes: ['component-reske-admin-apps-status'],
-            body: buildTable()
-        });
+        return div({
+            class: 'component-reske-admin-apps-status',
+        }, buildTable());
     }
 
     function component() {
