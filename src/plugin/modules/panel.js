@@ -254,21 +254,39 @@ define([
                 switch (state) {
                     case 'none':
                         return icon('ban', 'silver');
-
+                    case 'accepted':
+                        return span([
+                            span({
+                                class: 'fa fa-spinner fa-spin fa-fw',
+                                style: {
+                                    color: 'silver'
+                                }
+                            }),
+                            ' ',
+                            state
+                        ]);
                     case 'queued':
-                        return span({
-                            class: 'fa fa-spinner fa-spin fa-fw',
-                            style: {
-                                color: 'orange'
-                            }
-                        });
+                        return span([
+                            span({
+                                class: 'fa fa-spinner fa-spin fa-fw',
+                                style: {
+                                    color: 'orange'
+                                }
+                            }),
+                            ' ',
+                            state
+                        ]);
                     case 'started':
-                        return span({
-                            class: 'fa fa-spinner fa-spin fa-fw',
-                            style: {
-                                color: 'blue'
-                            }
-                        });
+                        return span([
+                            span({
+                                class: 'fa fa-spinner fa-spin fa-fw',
+                                style: {
+                                    color: 'blue'
+                                }
+                            }),
+                            ' ',
+                            state
+                        ]);
                     case 'finished':
                         return icon('check', 'green');
                 }
@@ -282,6 +300,12 @@ define([
                                 color: 'silver'
                             }
                         }, 'never');
+                    case 'accepted':
+                        return span({
+                            style: {
+                                color: 'silver'
+                            }
+                        }, '-');
                     case 'queued':
                         return span({
                             style: {
@@ -347,12 +371,8 @@ define([
                             };
 
                             var hasNeverBeenRun = appStatus.queued_epoch_ms === 0 ? true : false;
-                            var isRunning = (appStatus.state === 'queued' || appStatus.state === 'started');
+                            var isRunning = (appStatus.state === 'accepted' || appStatus.state === 'queued' || appStatus.state === 'started');
                             var dataPending = span({
-                                class: 'fa fa-spinner fa-spin fa-fw'
-                            });
-
-                            dataPending = span({
                                 style: {
                                     color: 'silver'
                                 }
@@ -421,11 +441,8 @@ define([
 
                             };
                             var hasNeverBeenRun = status.queued_epoch_ms === 0 ? true : false;
-                            var isRunning = (status.state === 'queued' || status.state === 'started');
+                            var isRunning = (status.state === 'accepted' || status.state === 'queued' || status.state === 'started');
                             var dataPending = span({
-                                class: 'fa fa-spinner fa-spin fa-fw'
-                            });
-                            dataPending = span({
                                 style: {
                                     color: 'silver'
                                 }
