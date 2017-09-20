@@ -93,7 +93,7 @@ define([
                 }),
                 td({
                     dataBind: {
-                        text: 'nextRunAt'
+                        html: 'nextRunAt'
                     }
                 }),
                 td(

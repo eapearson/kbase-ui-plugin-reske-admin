@@ -356,6 +356,66 @@ define([
                             color: 'black'
                         }
                     }, dateFormat(appStatus.finished_epoch_ms));
+                case 'error':
+                    return span({
+                        style: {
+                            color: 'red'
+                        }
+                    }, dateFormat(appStatus.finished_epoch_ms));
+                default:
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, dateFormat(appStatus.finished_epoch_ms));
+                }
+            }
+
+            function buildNextRunAt(appStatus) {
+                switch (appStatus.state) {
+                case 'none':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, 'never');
+                case 'accepted':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, '-');
+                case 'queued':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                case 'started':
+                    return span({
+                        style: {
+                            color: 'gray'
+                        }
+                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                case 'finished':
+                    return span({
+                        style: {
+                            color: 'black'
+                        }
+                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                case 'error':
+                    return span({
+                        style: {
+                            color: 'black'
+                        }
+                    }, dateFormat(appStatus.scheduled_epoch_ms));
+
+                default:
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, dateFormat(appStatus.scheduled_epoch_ms));
                 }
             }
 
@@ -438,7 +498,7 @@ define([
                                 newNodes: numeral(appStatus.new_re_nodes).format('0,0'),
                                 newRelations: numeral(appStatus.new_re_links).format('0,0'),
                                 lastRunAt: lastRunAt,
-                                nextRunAt: dateFormat(appStatus.scheduled_epoch_ms),
+                                nextRunAt: buildNextRunAt(appStatus), // dateFormat(appStatus.scheduled_epoch_ms),
                                 isRunnable: isRunnable
                             };
 

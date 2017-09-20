@@ -101,7 +101,7 @@ define([
                 }),
                 td({
                     dataBind: {
-                        text: 'lastRunAt'
+                        html: 'lastRunAt'
                     }
                 })
             ]))
