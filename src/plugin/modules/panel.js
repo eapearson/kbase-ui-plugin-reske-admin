@@ -5,7 +5,7 @@ define([
     'kb_common/html',
     'kb_common/bootstrapUtils',
     'kb_common/jsonRpc/dynamicServiceClient'
-], function(
+], function (
     Promise,
     ko,
     numeral,
@@ -26,7 +26,7 @@ define([
         var runningPollingInterval = 1000;
 
         function dateFormat(time) {
-            if (time === 0) {
+            if (!time) {
                 return 'never';
             }
             var date = new Date(time);
@@ -55,7 +55,7 @@ define([
                 running = true;
                 if (task.runInitial) {
                     runTask()
-                        .then(function() {
+                        .then(function () {
                             poll();
                         });
                 } else {
@@ -74,11 +74,11 @@ define([
             function runTask() {
                 var start = new Date().getTime();
                 return task.task()
-                    .catch(function(err) {
+                    .catch(function (err) {
                         console.error(timestamp() + ': Error while running task', err);
                     })
-                    .finally(function() {
-                        console.log(timestamp() + ': ran task in ' + (new Date().getTime() - start) + 'ms');
+                    .finally(function () {
+                        // console.log(timestamp() + ': ran task in ' + (new Date().getTime() - start) + 'ms');
                     });
             }
 
@@ -102,7 +102,7 @@ define([
                     cancelled: false
                 };
 
-                currentPoll.timer = window.setTimeout(function() {
+                currentPoll.timer = window.setTimeout(function () {
                     // Store a private reference so new pollers don't interfere if they are 
                     // created while we are still running.
                     var thisPoll = currentPoll;
@@ -111,7 +111,7 @@ define([
                         console.warn('poll cancelled! ' + thisPoll.id);
                     }
                     runTask()
-                        .finally(function() {
+                        .finally(function () {
                             thisPoll.timer = null;
                             poll();
                         });
@@ -133,7 +133,7 @@ define([
                     cancelCurrentPoll();
                 }
                 runTask()
-                    .then(function() {
+                    .then(function () {
                         poll();
                     });
             }
@@ -171,13 +171,10 @@ define([
 
             var message = ko.observable();
 
-            var resetStatus = ko.observable('idle');
-
-            message('Welcome!');
 
             var jobsRunning = ko.observable(false);
 
-            jobsRunning.subscribe(function(newValue) {
+            jobsRunning.subscribe(function (newValue) {
                 if (newValue) {
                     poller.update({
                         interval: runningPollingInterval
@@ -197,15 +194,31 @@ define([
 
             function getAppsStatus() {
                 return client.callFunc('getAppsStatus', [])
-                    .spread(function(result) {
+                    .spread(function (result) {
                         return result;
                     });
             }
 
             function getConnectorsStatus() {
                 return client.callFunc('getConnectorsStatus', [])
-                    .spread(function(result) {
+                    .spread(function (result) {
                         return result;
+                    });
+            }
+
+            function doRunAppClean(data) {
+                var params = {
+                    app: data.app
+                };
+                return client.callFunc('cleanAppData', [params])
+                    .then(function (result) {
+                        // NOTE usage of "then" -- this app returns null, not [] or [null] 
+                        // or whatever. This is a corner case of sdk app api weirdness.
+                        poller.force();
+                        return result;
+                    })
+                    .catch(function (err) {
+                        console.error('Error', err);
                     });
             }
 
@@ -215,29 +228,12 @@ define([
                     ref_mode: 1
                 };
                 return client.callFunc('runApp', [params])
-                    .spread(function(result) {
+                    .spread(function (result) {
                         poller.force();
                         return result;
                     })
-                    .catch(function(err) {
+                    .catch(function (err) {
                         console.error('Error', err);
-                    });
-            }
-
-            function doReset() {
-                var client = new DynamicServiceClient({
-                    url: runtime.config('services.service_wizard.url'),
-                    module: 'KBaseKnowledgeEngine',
-                    token: runtime.service('session').getAuthToken()
-                });
-                resetStatus('busy');
-                return client.callFunc('testInit', [])
-                    .then(function(result) {
-                        poller.force();
-                        return result;
-                    })
-                    .finally(function() {
-                        resetStatus('idle');
                     });
             }
 
@@ -250,80 +246,154 @@ define([
                 });
             }
 
+            function buildNoData() {
+                return span({
+                    style: {
+                        color: 'silver'
+                    }
+                }, '-');
+            }
+
             function buildStateIcon(state) {
                 switch (state) {
-                    case 'none':
-                        return icon('ban', 'silver');
-                    case 'accepted':
-                        return span([
-                            span({
-                                class: 'fa fa-spinner fa-spin fa-fw',
-                                style: {
-                                    color: 'silver'
-                                }
-                            }),
-                            ' ',
-                            state
-                        ]);
-                    case 'queued':
-                        return span([
-                            span({
-                                class: 'fa fa-spinner fa-spin fa-fw',
-                                style: {
-                                    color: 'orange'
-                                }
-                            }),
-                            ' ',
-                            state
-                        ]);
-                    case 'started':
-                        return span([
-                            span({
-                                class: 'fa fa-spinner fa-spin fa-fw',
-                                style: {
-                                    color: 'blue'
-                                }
-                            }),
-                            ' ',
-                            state
-                        ]);
-                    case 'finished':
-                        return icon('check', 'green');
+                case 'none':
+                    return icon('ban', 'silver');
+                case 'accepted':
+                    return span([
+                        span({
+                            class: 'fa fa-spinner fa-spin fa-fw',
+                            style: {
+                                color: 'silver'
+                            }
+                        }),
+                        ' ',
+                        state
+                    ]);
+                case 'queued':
+                    return span([
+                        span({
+                            class: 'fa fa-spinner fa-spin fa-fw',
+                            style: {
+                                color: 'orange'
+                            }
+                        }),
+                        ' ',
+                        state
+                    ]);
+                case 'started':
+                    return span([
+                        span({
+                            class: 'fa fa-spinner fa-spin fa-fw',
+                            style: {
+                                color: 'blue'
+                            }
+                        }),
+                        ' ',
+                        state
+                    ]);
+                case 'finished':
+                    return icon('check', 'green');
+                case 'error':
+                    return icon('exclamation-circle', 'red');
+                default:
+                    if (state === undefined) {
+                        return buildNoData();
+                    } else {
+                        return span('? ' + state);
+                    }
+                }
+            }
+
+            function buildIsRunnable(state) {
+                switch (state) {
+                case 'none':
+                    return false;
+                case 'accepted':
+                    return false;
+                case 'queued':
+                    return false;
+                case 'started':
+                    return false;
+                case 'finished':
+                    return true;
+                case 'error':
+                    return true;
+                default:
+                    // this should probably be an error...
+                    return true;
                 }
             }
 
             function buildLastRunAt(appStatus) {
                 switch (appStatus.state) {
-                    case 'none':
-                        return span({
-                            style: {
-                                color: 'silver'
-                            }
-                        }, 'never');
-                    case 'accepted':
-                        return span({
-                            style: {
-                                color: 'silver'
-                            }
-                        }, '-');
-                    case 'queued':
-                        return span({
-                            style: {
-                                color: 'silver'
-                            }
-                        }, dateFormat(appStatus.queued_epoch_ms));
-                    case 'started':
-                        return span({
-                            style: {
-                                color: 'gray'
-                            }
-                        }, dateFormat(appStatus.started_epoch_ms));
-                    case 'finished':
-                        return span({
-                            style: {
-                                color: 'black'
-                            }
-                        }, dateFormat(appStatus.finished_epoch_ms));
+                case 'none':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, 'never');
+                case 'accepted':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, '-');
+                case 'queued':
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, dateFormat(appStatus.queued_epoch_ms));
+                case 'started':
+                    return span({
+                        style: {
+                            color: 'gray'
+                        }
+                    }, dateFormat(appStatus.started_epoch_ms));
+                case 'finished':
+                    return span({
+                        style: {
+                            color: 'black'
+                        }
+                    }, dateFormat(appStatus.finished_epoch_ms));
+                }
+            }
+
+            function buildMeasure(value, status) {
+                var config = {
+                    none: {
+                        color: 'black'
+                    },
+                    accepted: {
+                        color: 'gray'
+                    },
+                    queued: {
+                        color: 'orange'
+                    },
+                    started: {
+                        color: 'blue'
+                    },
+                    finished: {
+                        color: 'black'
+                    },
+                    error: {
+                        color: 'red'
+                    }
+                };
+
+                var statusConfig = config[status];
+                if (statusConfig) {
+                    return span({
+                        style: {
+                            color: statusConfig.color
+                        }
+                    }, numeral(value).format('0,0'));
+                } else {
+                    return span({
+                        style: {
+                            color: 'silver'
+                        }
+                    }, '-');
                 }
             }
 
@@ -346,9 +416,9 @@ define([
             // Kick off the apps status population.
             function updateAppStatus() {
                 return getAppsStatus()
-                    .then(function(newAppsStatus) {
+                    .then(function (newAppsStatus) {
                         appsStatus.removeAll();
-                        newAppsStatus.forEach(function(appStatus) {
+                        newAppsStatus.forEach(function (appStatus) {
 
                             // if (appStatus.state === 'queued') {
                             //     console.log(appStatus);
@@ -356,6 +426,8 @@ define([
 
                             var stateIcon = buildStateIcon(appStatus.state);
                             var lastRunAt = buildLastRunAt(appStatus);
+
+                            var isRunnable = buildIsRunnable(appStatus.state);
 
                             var newStatus = {
                                 app: appStatus.app,
@@ -366,38 +438,28 @@ define([
                                 newNodes: numeral(appStatus.new_re_nodes).format('0,0'),
                                 newRelations: numeral(appStatus.new_re_links).format('0,0'),
                                 lastRunAt: lastRunAt,
-                                nextRunAt: dateFormat(appStatus.scheduled_epoch_ms)
-
+                                nextRunAt: dateFormat(appStatus.scheduled_epoch_ms),
+                                isRunnable: isRunnable
                             };
 
-                            var hasNeverBeenRun = appStatus.queued_epoch_ms === 0 ? true : false;
-                            var isRunning = (appStatus.state === 'accepted' || appStatus.state === 'queued' || appStatus.state === 'started');
-                            var dataPending = span({
-                                style: {
-                                    color: 'silver'
-                                }
-                            }, '-');
+                            // var hasNeverBeenRun = appStatus.queued_epoch_ms === 0 ? true : false;
+                            // var isRunning = (appStatus.state === 'accepted' || appStatus.state === 'queued' || appStatus.state === 'started');
+                            // var dataPending = span({
+                            //     style: {
+                            //         color: 'silver'
+                            //     }
+                            // }, '-');
 
-                            var dataNever = span({
-                                class: 'fa fa-ban',
-                                style: {
-                                    color: 'silver'
-                                }
-                            });
+                            // var dataNever = span({
+                            //     class: 'fa fa-ban',
+                            //     style: {
+                            //         color: 'silver'
+                            //     }
+                            // });
 
-                            if (isRunning) {
-                                newStatus.newNodes = dataPending;
-                                newStatus.newRelations = dataPending;
-                                newStatus.updatedNodes = dataPending;
-                            } else if (hasNeverBeenRun) {
-                                newStatus.newNodes = dataNever;
-                                newStatus.newRelations = dataNever;
-                                newStatus.updatedNodes = dataNever;
-                            } else {
-                                newStatus.updatedNodes = numeral(appStatus.updated_re_nodes).format('0,0');
-                                newStatus.newNodes = numeral(appStatus.new_re_nodes).format('0,0');
-                                newStatus.newRelations = numeral(appStatus.new_re_links).format('0,0');
-                            }
+                            newStatus.newNodes = buildMeasure(appStatus.new_re_nodes, appStatus.state);
+                            newStatus.newRelations = buildMeasure(appStatus.new_re_links, appStatus.state);
+                            newStatus.updatedNodes = buildMeasure(appStatus.updated_re_nodes, appStatus.state);
 
                             appsStatus.push(newStatus);
                         });
@@ -427,9 +489,9 @@ define([
 
             function updateConnectorStatus() {
                 return getConnectorsStatus()
-                    .then(function(newConnectorsStatus) {
+                    .then(function (newConnectorsStatus) {
                         connectorsStatus.removeAll();
-                        newConnectorsStatus.forEach(function(status) {
+                        newConnectorsStatus.forEach(function (status) {
                             var stateIcon = buildStateIcon(status.state);
                             var newStatus = {
                                 user: status.user,
@@ -440,31 +502,21 @@ define([
                                 lastRunAt: dateFormat(status.finished_epoch_ms),
 
                             };
-                            var hasNeverBeenRun = status.queued_epoch_ms === 0 ? true : false;
-                            var isRunning = (status.state === 'accepted' || status.state === 'queued' || status.state === 'started');
-                            var dataPending = span({
-                                style: {
-                                    color: 'silver'
-                                }
-                            }, '-');
+                            // var hasNeverBeenRun = status.queued_epoch_ms === 0 ? true : false;
+                            // var isRunning = (status.state === 'accepted' || status.state === 'queued' || status.state === 'started');
+                            // var dataPending = span({
+                            //     style: {
+                            //         color: 'silver'
+                            //     }
+                            // }, '-');
 
-                            var dataNever = span({
-                                class: 'fa fa-ban'
-                            });
+                            // var dataNever = span({
+                            //     class: 'fa fa-ban'
+                            // });
 
-                            if (isRunning) {
-                                newStatus.newNodes = dataPending;
-                                newStatus.newRelations = dataPending;
-                                newStatus.updatedNodes = dataPending;
-                            } else if (hasNeverBeenRun) {
-                                newStatus.newNodes = dataNever;
-                                newStatus.newRelations = dataNever;
-                                newStatus.updatedNodes = dataNever;
-                            } else {
-                                newStatus.updatedNodes = numeral(status.updated_re_nodes).format('0,0');
-                                newStatus.newNodes = numeral(status.new_re_nodes).format('0,0');
-                                newStatus.newRelations = numeral(status.new_re_links).format('0,0');
-                            }
+                            newStatus.newNodes = buildMeasure(status.new_re_nodes, status.state);
+                            newStatus.newRelations = buildMeasure(status.new_re_links, status.state);
+                            newStatus.updatedNodes = buildMeasure(status.updated_re_nodes, status.state);
 
                             connectorsStatus.push(newStatus);
                         });
@@ -472,24 +524,25 @@ define([
                     });
             }
 
+
             var pollStatus = ko.observable('idle');
             var poller = Poller();
             poller.start({
                 name: 'updater',
                 interval: normalPollingInterval,
                 runInitial: true,
-                task: function() {
-                    message('polling...');
+                task: function () {
+                    // message('polling...');
                     pollStatus('busy');
                     var start = new Date().getTime();
                     return Promise.all([
                             updateAppStatus(),
                             updateConnectorStatus()
                         ])
-                        .spread(function(appsStatus, connectorStatus) {
+                        .spread(function (appsStatus, connectorStatus) {
 
                             if (
-                                appsStatus.some(function(status) {
+                                appsStatus.some(function (status) {
                                     return (['accepted', 'queued', 'started'].indexOf(status.state) >= 0);
                                 })
                                 // ||
@@ -506,7 +559,7 @@ define([
                             var elapsed = new Date().getTime() - start;
                             // console.log('poller took: ' + elapsed + 'ms');
                         })
-                        .finally(function() {
+                        .finally(function () {
                             message('');
                             pollStatus('idle');
                         });
@@ -528,12 +581,11 @@ define([
 
                 // Actions
                 doRunAppStatus: doRunAppStatus,
-                doReset: doReset,
+                doRunAppClean: doRunAppClean,
 
                 // status
                 message: message,
                 pollStatus: pollStatus,
-                resetStatus: resetStatus,
 
                 stop: stop
             };
@@ -559,10 +611,8 @@ define([
                             component: {
                                 name: '"reske-admin-control-bar"',
                                 params: {
-                                    doReset: 'doReset',
                                     message: 'message',
-                                    pollStatus: 'pollStatus',
-                                    resetStatus: 'resetStatus'
+                                    pollStatus: 'pollStatus'
                                 }
                             }
                         }
@@ -587,7 +637,8 @@ define([
                                         name: '"reske-admin-apps-status"',
                                         params: {
                                             appsStatus: 'appsStatus',
-                                            doRunAppStatus: 'doRunAppStatus'
+                                            doRunAppStatus: 'doRunAppStatus',
+                                            doRunAppClean: 'doRunAppClean'
                                         }
                                     }
                                 }
@@ -630,7 +681,7 @@ define([
     }
 
     return {
-        make: function(config) {
+        make: function (config) {
             return factory(config);
         }
     };

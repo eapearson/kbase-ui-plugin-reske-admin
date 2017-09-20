@@ -1,7 +1,7 @@
 define([
     'knockout-plus',
     'kb_common/html'
-], function(
+], function (
     ko,
     html
 ) {
@@ -32,78 +32,40 @@ define([
             }, [
                 div({
                     dataBind: {
-                        text: 'message'
+                        html: 'message'
                     },
                     style: {
                         display: 'inline-block',
-                        width: '10em',
+                        // width: '10em',
                         textAlign: 'right'
                     }
                 }),
-                div({
-                    style: {
-                        display: 'inline-block',
-                        width: '1.5em',
-                        margin: '4px',
-                        textAlign: 'center'
-                    }
-                }, [
+                // div({
+                //     style: {
+                //         display: 'inline-block',
+                //         width: '1.5em',
+                //         margin: '4px',
+                //         textAlign: 'center'
+                //     }
+                // }, [
 
-                    '<!-- ko if: resetStatus() === "idle" -->',
-                    span({
-                        class: 'fa fa-recycle',
-                        style: {
-                            color: 'gray'
-                        }
-                    }),
-                    '<!-- /ko -->',
-                    '<!-- ko if: resetStatus() === "busy" -->',
-                    span({
-                        class: 'fa fa-recycle fa-spin fa-fw',
-                        style: {
-                            color: 'green'
-                        }
-                    }),
-                    '<!-- /ko -->'
-                ]),
-                div({
-                    style: {
-                        display: 'inline-block',
-                        width: '1.5em',
-                        margin: '4px',
-                        textAlign: 'center'
-                    }
-                }, [
-
-                    '<!-- ko if: pollStatus() === "idle" -->',
-                    span({
-                        class: 'fa fa-refresh',
-                        style: {
-                            color: 'gray'
-                        }
-                    }),
-                    '<!-- /ko -->',
-                    '<!-- ko if: pollStatus() === "busy" -->',
-                    span({
-                        class: 'fa fa-refresh fa-spin fa-fw',
-                        style: {
-                            color: 'green'
-                        }
-                    }),
-                    '<!-- /ko -->'
-                ])
-            ]),
-
-            div({
-                class: 'btn-group pull-right'
-            }, [
-                button({
-                    class: 'btn btn-danger',
-                    dataBind: {
-                        click: 'doReset',
-                        disable: 'resetStatus() === "busy"'
-                    }
-                }, 'Reset Demo')
+                //     '<!-- ko if: pollStatus() === "idle" -->',
+                //     span({
+                //         class: 'fa fa-refresh',
+                //         style: {
+                //             color: 'gray'
+                //         }
+                //     }),
+                //     '<!-- /ko -->',
+                //     '<!-- ko if: pollStatus() === "busy" -->',
+                //     span({
+                //         class: 'fa fa-refresh fa-spin fa-fw',
+                //         style: {
+                //             color: 'green'
+                //         }
+                //     }),
+                //     '<!-- /ko -->'
+                // ])
             ])
         ]);
 

@@ -2,7 +2,7 @@ define([
     'kb_common/html',
     'knockout-plus',
     'kb_common/bootstrapUtils'
-], function(
+], function (
     html,
     ko,
     BS
@@ -24,7 +24,8 @@ define([
     function viewModel(params) {
         return {
             appsStatus: params.appsStatus,
-            doRunAppStatus: params.doRunAppStatus
+            doRunAppStatus: params.doRunAppStatus,
+            doRunAppClean: params.doRunAppClean
         };
     }
 
@@ -45,27 +46,15 @@ define([
             thead([
                 tr([
                     th('Name'),
-                    th('Status'),
-                    th(div({
+                    th({
                         style: {
-                            display: 'inline-block',
-                            textAlign: 'left'
+                            textAlign: 'center'
                         }
-                    }, 'Reinforced Nodes')),
-                    th(div({
-                        style: {
-                            display: 'inline-block',
-                            textAlign: 'left'
-                        }
-                    }, 'New Nodes')),
-                    th(div({
-                        style: {
-                            display: 'inline-block',
-                            textAlign: 'left'
-                        }
-                    }, 'New Relations')),
-                    th('Last run date'),
-                    th('Next run date'),
+                    }, 'Status'),
+                    th('New Nodes'),
+                    th('New Relations'),
+                    th('Last ran'),
+                    th('Next run'),
                     th()
                 ])
             ]),
@@ -82,11 +71,9 @@ define([
                 td({
                     dataBind: {
                         html: 'statusIcon'
-                    }
-                }),
-                td({
-                    dataBind: {
-                        html: 'updatedNodes'
+                    },
+                    style: {
+                        textAlign: 'center'
                     }
                 }),
                 td({
@@ -110,12 +97,24 @@ define([
                     }
                 }),
                 td(
-                    button({
-                        class: 'btn btn-primary',
-                        dataBind: {
-                            click: '$component.doRunAppStatus'
-                        }
-                    }, 'Run')
+                    div({
+                        class: 'btn-group'
+                    }, [
+                        button({
+                            class: 'btn btn-default',
+                            dataBind: {
+                                click: '$component.doRunAppClean',
+                                disable: '!isRunnable'
+                            }
+                        }, 'Clean'),
+                        button({
+                            class: 'btn btn-primary',
+                            dataBind: {
+                                click: '$component.doRunAppStatus',
+                                disable: '!isRunnable'
+                            }
+                        }, 'Run')
+                    ])
                 )
             ]))
         ]);

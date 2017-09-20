@@ -2,7 +2,7 @@ define([
     'kb_common/html',
     'knockout-plus',
     'kb_common/bootstrapUtils'
-], function(
+], function (
     html,
     ko,
     BS
@@ -11,6 +11,7 @@ define([
 
     var t = html.tag,
         div = t('div'),
+        a = t('a'),
         table = t('table'),
         colgroup = t('colgroup'),
         col = t('col'),
@@ -50,12 +51,6 @@ define([
                             display: 'inline-block',
                             textAlign: 'left'
                         }
-                    }, 'Reinforced Nodes')),
-                    th(div({
-                        style: {
-                            display: 'inline-block',
-                            textAlign: 'left'
-                        }
                     }, 'New Nodes')),
                     th(div({
                         style: {
@@ -63,7 +58,7 @@ define([
                             textAlign: 'left'
                         }
                     }, 'New Relations')),
-                    th('Ran at')
+                    th('Last ran')
                 ])
             ]),
             tbody({
@@ -81,19 +76,17 @@ define([
                         text: 'name'
                     }
                 }),
-                td({
+                td(a({
                     dataBind: {
+                        attr: {
+                            href: '"#dataview/" + objectRef'
+                        },
                         text: 'objectRef'
                     }
-                }),
+                })),
                 td({
                     dataBind: {
                         html: 'statusIcon'
-                    }
-                }),
-                td({
-                    dataBind: {
-                        html: 'updatedNodes'
                     }
                 }),
                 td({

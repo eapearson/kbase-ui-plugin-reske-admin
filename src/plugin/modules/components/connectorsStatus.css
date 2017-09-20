@@ -1,9 +1,54 @@
-.component-reske-admin-connectors-status table td:nth-child(4),
-.component-reske-admin-connectors-status table td:nth-child(5),
-.component-reske-admin-connectors-status table td:nth-child(6),
+.component-reske-admin-connectors-status table th:nth-child(1),
+.component-reske-admin-connectors-status table td:nth-child(1) {
+    width: 10%;
+}
+
+.component-reske-admin-connectors-status table th:nth-child(2),
+.component-reske-admin-connectors-status table td:nth-child(2) {
+    width: 30%;
+}
+
+.component-reske-admin-connectors-status table th:nth-child(3),
+.component-reske-admin-connectors-status table td:nth-child(3) {
+    width: 10%;
+}
+
 .component-reske-admin-connectors-status table th:nth-child(4),
+.component-reske-admin-connectors-status table td:nth-child(4) {
+    width: 10%;
+    text-align: center;
+}
+
 .component-reske-admin-connectors-status table th:nth-child(5),
-.component-reske-admin-connectors-status table th:nth-child(6) {
+.component-reske-admin-connectors-status table td:nth-child(5) {
+    width: 10%;
     text-align: right;
     padding-right: 1em;
 }
+
+.component-reske-admin-connectors-status table td:nth-child(5) {
+    padding-right: 1.5em;
+}
+
+.component-reske-admin-connectors-status table th:nth-child(6),
+.component-reske-admin-connectors-status table td:nth-child(6) {
+    width: 10%;
+    text-align: right;
+    padding-right: 1em;
+}
+
+.component-reske-admin-connectors-status table td:nth-child(6) {
+    padding-right: 1.5em;
+}
+
+.component-reske-admin-connectors-status table th:nth-child(7),
+.component-reske-admin-connectors-status table td:nth-child(7) {
+    width: 10%;
+    text-align: right;
+    padding-right: 1em;
+}
+
+
+/* .component-reske-admin-connectors-status table td:nth-child(7) {
+    padding-right: 1.5em;
+} */
