@@ -58,7 +58,7 @@ define([
                             textAlign: 'left'
                         }
                     }, 'New Relations')),
-                    th('Last ran')
+                    th('Date')
                 ])
             ]),
             tbody({

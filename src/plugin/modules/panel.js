@@ -2,6 +2,7 @@ define([
     'bluebird',
     'knockout-plus',
     'numeral',
+    'moment',
     'kb_common/html',
     'kb_common/bootstrapUtils',
     'kb_common/jsonRpc/dynamicServiceClient'
@@ -9,6 +10,7 @@ define([
     Promise,
     ko,
     numeral,
+    moment,
     html,
     BS,
     DynamicServiceClient
@@ -23,11 +25,11 @@ define([
             vm;
 
         var normalPollingInterval = 10000;
-        var runningPollingInterval = 1000;
+        var runningPollingInterval = 5000;
 
-        function dateFormat(time) {
+        function dateFormat(time, defaultValue) {
             if (!time) {
-                return 'never';
+                return defaultValue;
             }
             var date = new Date(time);
             return [date.getMonth() + 1, date.getDate(), date.getFullYear()].join('/');
@@ -343,31 +345,31 @@ define([
                         style: {
                             color: 'silver'
                         }
-                    }, dateFormat(appStatus.queued_epoch_ms));
+                    }, dateFormat(appStatus.queued_epoch_ms, 'never'));
                 case 'started':
                     return span({
                         style: {
                             color: 'gray'
                         }
-                    }, dateFormat(appStatus.started_epoch_ms));
+                    }, dateFormat(appStatus.started_epoch_ms, 'never'));
                 case 'finished':
                     return span({
                         style: {
                             color: 'black'
                         }
-                    }, dateFormat(appStatus.finished_epoch_ms));
+                    }, dateFormat(appStatus.finished_epoch_ms, 'never'));
                 case 'error':
                     return span({
                         style: {
                             color: 'red'
                         }
-                    }, dateFormat(appStatus.finished_epoch_ms));
+                    }, dateFormat(appStatus.finished_epoch_ms, 'never'));
                 default:
                     return span({
                         style: {
                             color: 'silver'
                         }
-                    }, dateFormat(appStatus.finished_epoch_ms));
+                    }, dateFormat(appStatus.finished_epoch_ms, 'never'));
                 }
             }
 
@@ -390,32 +392,32 @@ define([
                         style: {
                             color: 'silver'
                         }
-                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                    }, dateFormat(appStatus.scheduled_epoch_ms, 'never'));
                 case 'started':
                     return span({
                         style: {
                             color: 'gray'
                         }
-                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                    }, dateFormat(appStatus.scheduled_epoch_ms, 'never'));
                 case 'finished':
                     return span({
                         style: {
                             color: 'black'
                         }
-                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                    }, dateFormat(appStatus.scheduled_epoch_ms, 'never'));
                 case 'error':
                     return span({
                         style: {
                             color: 'black'
                         }
-                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                    }, dateFormat(appStatus.scheduled_epoch_ms, 'never'));
 
                 default:
                     return span({
                         style: {
                             color: 'silver'
                         }
-                    }, dateFormat(appStatus.scheduled_epoch_ms));
+                    }, dateFormat(appStatus.scheduled_epoch_ms, 'never'));
                 }
             }
 
@@ -530,6 +532,7 @@ define([
 
             var connectorsStatus = ko.observableArray();
 
+
             // {
             //     connector_app: "GenomeHomologyConnector",
             //     connector_title: "Genome homology connector",
@@ -551,7 +554,7 @@ define([
                 return getConnectorsStatus()
                     .then(function (newConnectorsStatus) {
                         connectorsStatus.removeAll();
-                        newConnectorsStatus.forEach(function (status) {
+                        newConnectorsStatus.reverse().forEach(function (status) {
                             var stateIcon = buildStateIcon(status.state);
                             var newStatus = {
                                 user: status.user,
@@ -559,8 +562,8 @@ define([
                                 objectRef: status.obj_ref,
                                 status: status.state,
                                 statusIcon: stateIcon,
-                                lastRunAt: dateFormat(status.finished_epoch_ms),
-
+                                lastRunTime: status.finished_epoch_ms,
+                                lastRunAt: status.finished_epoch_ms ? moment(status.finished_epoch_ms).format('MM/DD/YYYY hh:mm A') : '-'
                             };
                             // var hasNeverBeenRun = status.queued_epoch_ms === 0 ? true : false;
                             // var isRunning = (status.state === 'accepted' || status.state === 'queued' || status.state === 'started');
